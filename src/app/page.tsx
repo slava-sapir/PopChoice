@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,12 @@ const emptyAnswers: PersonAnswers = {
 
 const eraOptions = ["New", "Classic"];
 const moodOptions = ["Fun", "Serious", "Inspiring", "Scary"];
+const loadingSteps = [
+  "Reading everyone's preferences...",
+  "Creating a group embedding...",
+  "Searching similar movies...",
+  "Writing the recommendation reason...",
+];
 
 const fallbackRecommendations: DisplayRecommendation[] = [
   {
@@ -78,6 +84,16 @@ function getPosterForMatch(match: MovieRecommendation, index: number) {
   return index % 2 === 0 ? "/figma-poster-martian.png" : "/figma-poster-rescue-dawn.png";
 }
 
+function isStrongTextAnswer(value: string) {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized.length < 8) {
+    return false;
+  }
+
+  return !["idk", "i dont know", "i don't know", "anything", "whatever", "no idea"].includes(normalized);
+}
+
 function toDisplayRecommendations(matches: MovieRecommendation[]): DisplayRecommendation[] {
   if (matches.length === 0) {
     return [];
@@ -104,10 +120,25 @@ export default function Home() {
   const [answers, setAnswers] = useState<PersonAnswers[]>(makeEmptyAnswers(2));
   const [activeRecommendation, setActiveRecommendation] = useState(0);
   const [recommendations, setRecommendations] = useState<DisplayRecommendation[]>(fallbackRecommendations);
+  const [lastResponse, setLastResponse] = useState<RecommendationResponse | null>(null);
+  const [showTrace, setShowTrace] = useState(false);
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
 
   const currentAnswers = answers[currentPerson] ?? emptyAnswers;
   const currentRecommendation = recommendations[activeRecommendation];
+
+  useEffect(() => {
+    if (stage !== "loading") {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setLoadingStepIndex((step) => (step + 1) % loadingSteps.length);
+    }, 1300);
+
+    return () => window.clearInterval(interval);
+  }, [stage]);
 
   const progress = useMemo(() => {
     if (stage === "setup") {
@@ -125,9 +156,8 @@ export default function Home() {
     return 78 + ((activeRecommendation + 1) / Math.max(recommendations.length, 1)) * 22;
   }, [activeRecommendation, currentPerson, peopleCount, recommendations.length, stage]);
 
-  const canSubmitPerson = Object.values(currentAnswers).every(
-    (value) => value.trim().length > 0,
-  );
+  const validationMessage = getPersonValidationMessage(currentAnswers);
+  const canSubmitPerson = validationMessage === "";
 
   function startPreferences(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,12 +182,18 @@ export default function Home() {
   }
 
   async function continueFromPerson() {
+    if (validationMessage) {
+      setErrorMessage(validationMessage);
+      return;
+    }
+
     if (currentPerson + 1 < peopleCount) {
       setCurrentPerson((person) => person + 1);
       return;
     }
 
     setErrorMessage("");
+    setLoadingStepIndex(0);
     setStage("loading");
 
     try {
@@ -187,6 +223,8 @@ export default function Home() {
       }
 
       setRecommendations(nextRecommendations);
+      setLastResponse(payload);
+      setShowTrace(false);
       setActiveRecommendation(0);
       setStage("results");
     } catch (error) {
@@ -203,7 +241,17 @@ export default function Home() {
     setAnswers(makeEmptyAnswers(2));
     setActiveRecommendation(0);
     setRecommendations(fallbackRecommendations);
+    setLastResponse(null);
+    setShowTrace(false);
     setErrorMessage("");
+  }
+
+  function editAnswers() {
+    setStage("preferences");
+    setCurrentPerson(0);
+    setActiveRecommendation(0);
+    setErrorMessage("");
+    setShowTrace(false);
   }
 
   function goBack() {
@@ -349,7 +397,7 @@ export default function Home() {
               <div className="space-y-2">
                 <h1 className="text-xl font-semibold tracking-normal">Finding matches</h1>
                 <p className="text-[0.78rem] leading-5 text-white/75">
-                  Creating a group embedding and searching the movie vector database.
+                  {loadingSteps[loadingStepIndex]}
                 </p>
               </div>
             </section>
@@ -401,6 +449,11 @@ export default function Home() {
                 </p>
               )}
 
+              <p className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-center text-[0.68rem] leading-4 text-white/65">
+                Recommendations are generated from your group answers, vector database matches,
+                and an AI explanation layer. Results can vary as the movie data grows.
+              </p>
+
               <div className="space-y-2 text-center text-[0.78rem] leading-5 text-white/85">
                 <p>{currentRecommendation.summary}</p>
                 <p className="rounded-sm border border-[#47e982]/25 bg-[#47e982]/10 px-3 py-2 text-left text-white">
@@ -411,24 +464,80 @@ export default function Home() {
                 </p>
               </div>
 
-              {activeRecommendation + 1 < recommendations.length ? (
-                <Button
-                  className="mt-2 w-full"
-                  onClick={() => setActiveRecommendation((choice) => choice + 1)}
+              {lastResponse && (
+                <button
+                  className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/60 transition hover:text-[#47e982]"
+                  onClick={() => setShowTrace((visible) => !visible)}
                   type="button"
                 >
-                  Next Movie
-                </Button>
-              ) : (
-                <Button className="mt-2 w-full" onClick={resetSurvey} type="button">
-                  Go Again
-                </Button>
+                  {showTrace ? "Hide AI Trace" : "Show AI Trace"}
+                </button>
               )}
+
+              {showTrace && lastResponse && <AiTrace response={lastResponse} />}
+
+              <div className="grid gap-2">
+                {activeRecommendation + 1 < recommendations.length && (
+                  <Button
+                    className="w-full"
+                    onClick={() => setActiveRecommendation((choice) => choice + 1)}
+                    type="button"
+                  >
+                    Next Movie
+                  </Button>
+                )}
+                <Button className="w-full" onClick={editAnswers} type="button" variant="secondary">
+                  Try Another Vibe
+                </Button>
+                {activeRecommendation + 1 >= recommendations.length && (
+                  <Button className="w-full" onClick={resetSurvey} type="button">
+                    Go Again
+                  </Button>
+                )}
+              </div>
             </section>
           )}
         </div>
       </section>
     </main>
+  );
+}
+
+function getPersonValidationMessage(answers: PersonAnswers) {
+  if (!isStrongTextAnswer(answers.favoriteMovie)) {
+    return "Add a little more detail about a favorite movie so the embedding has a stronger signal.";
+  }
+
+  if (!answers.era.trim()) {
+    return "Choose whether this person wants something new or classic.";
+  }
+
+  if (!answers.mood.trim()) {
+    return "Choose a mood for this person.";
+  }
+
+  if (!isStrongTextAnswer(answers.islandPerson)) {
+    return "Add a little more detail about the film person choice so PopChoice can read the vibe.";
+  }
+
+  return "";
+}
+
+function AiTrace({ response }: { response: RecommendationResponse }) {
+  return (
+    <div className="max-h-44 overflow-auto rounded-md border border-[#394777] bg-[#050b27] p-3 text-left text-[0.68rem] leading-4 text-white/75">
+      <p className="mb-2 font-bold uppercase tracking-[0.14em] text-[#47e982]">Formatted group text</p>
+      <pre className="mb-3 whitespace-pre-wrap font-sans">{response.groupPreferenceText}</pre>
+      <p className="mb-2 font-bold uppercase tracking-[0.14em] text-[#47e982]">Top vector matches</p>
+      <ol className="space-y-1">
+        {response.matches.map((match) => (
+          <li key={match.id}>
+            {match.title}
+            {match.release_year ? ` (${match.release_year})` : ""} - {(match.similarity * 100).toFixed(1)}%
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 

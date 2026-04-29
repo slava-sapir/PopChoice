@@ -64,7 +64,8 @@ export async function findMovieMatches(
     throw new PublicError("The movie database could not be searched right now.", 502);
   }
 
-  const matches = (data ?? []) as MovieMatch[];
+  const rawMatches = (data ?? []) as MovieMatch[];
+  const matches = applyPreferenceFilters(rawMatches, request);
 
   return {
     groupPreferenceText,
@@ -196,6 +197,53 @@ async function createConversationalRecommendations({
   );
 }
 
+function applyPreferenceFilters(matches: MovieMatch[], request: RecommendationRequest) {
+  const eraPreference = getGroupEraPreference(request);
+
+  if (!eraPreference) {
+    return matches;
+  }
+
+  const filteredMatches = matches.filter((match) => {
+    if (!match.release_year) {
+      return true;
+    }
+
+    return eraPreference === "New" ? match.release_year >= 2000 : match.release_year < 2000;
+  });
+
+  return filteredMatches.length > 0 ? filteredMatches : matches;
+}
+
+function getGroupEraPreference(request: RecommendationRequest) {
+  const counts = request.people.reduce(
+    (total, person) => {
+      if (person.era === "New" || person.era === "Classic") {
+        total[person.era] += 1;
+      }
+
+      return total;
+    },
+    { New: 0, Classic: 0 },
+  );
+
+  if (counts.New === counts.Classic) {
+    return null;
+  }
+
+  return counts.New > counts.Classic ? "New" : "Classic";
+}
+
+function isStrongTextAnswer(value: string) {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized.length < 8) {
+    return false;
+  }
+
+  return !["idk", "i dont know", "i don't know", "anything", "whatever", "no idea"].includes(normalized);
+}
+
 function toFallbackRecommendation(match: MovieMatch): MovieRecommendation {
   return {
     ...match,
@@ -228,6 +276,10 @@ function validateRecommendationRequest(request: RecommendationRequest) {
 
     if (values.some((value) => typeof value !== "string" || value.trim().length === 0)) {
       throw new PublicError(`Person ${index + 1} is missing one or more answers.`);
+    }
+
+    if (!isStrongTextAnswer(person.favoriteMovie) || !isStrongTextAnswer(person.islandPerson)) {
+      throw new PublicError(`Person ${index + 1} needs a little more detail in the written answers.`);
     }
   }
 }
