@@ -37,7 +37,7 @@ const emptyAnswers: PersonAnswers = {
 };
 
 const eraOptions = ["New", "Classic"];
-const moodOptions = ["Fun", "Serious", "Inspiring", "Scary"];
+const moodOptions = ["Fun", "Drama", "Inspiring", "Scary"];
 const loadingSteps = [
   "Reading everyone's preferences...",
   "Creating a group embedding...",
@@ -274,9 +274,9 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-black px-4 py-6 text-white">
-      <section className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[390px] items-center justify-center">
-        <div className="relative flex min-h-[720px] w-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#000b3b] px-7 py-7 shadow-2xl shadow-black/70">
+    <main className="min-h-screen bg-black px-4 py-5 text-white sm:px-6 lg:px-8">
+      <section className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-5xl items-center justify-center">
+        <div className="relative flex w-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#000b3b] px-5 py-6 shadow-2xl shadow-black/70 sm:px-7 lg:min-h-[640px] lg:px-10 lg:py-8">
           {stage !== "setup" && (
             <button
               aria-label="Go back"
@@ -291,21 +291,24 @@ export default function Home() {
 
           <Header />
 
-          <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-[#27345f]">
+          <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-[#27345f] lg:mb-7">
             <div
               className="h-full rounded-full bg-[#47e982] transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              style={{ width: progress + "%" }}
             />
           </div>
 
           {stage === "setup" && (
-            <form className="flex flex-1 flex-col justify-center gap-4" onSubmit={startPreferences}>
+            <form
+              className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-4"
+              onSubmit={startPreferences}
+            >
               <p className="rounded-md border border-[#394777] bg-[#151f46]/70 px-4 py-3 text-center text-sm leading-6 text-[#dce4ff]">
                 PopChoice compares everyone&apos;s movie mood, searches our vector database, and
                 uses AI to explain the picks your group is most likely to enjoy.
               </p>
 
-              <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="How many people are watching?">
                   <Input
                     max={8}
@@ -328,14 +331,14 @@ export default function Home() {
                 </Field>
               </div>
 
-              <Button className="mt-4 w-full" type="submit">
+              <Button className="mt-4 w-full sm:mx-auto sm:max-w-sm" type="submit">
                 Start
               </Button>
             </form>
           )}
 
           {stage === "preferences" && (
-            <section className="flex flex-1 flex-col justify-center gap-4">
+            <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-4">
               <div className="text-center">
                 <p className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-[#000b3b]">
                   {currentPerson + 1}
@@ -348,40 +351,46 @@ export default function Home() {
                 </p>
               )}
 
-              <Field label="What's your favorite movie and why?">
-                <Textarea
-                  className="min-h-16"
-                  onChange={(event) => updateCurrentAnswer("favoriteMovie", event.target.value)}
-                  value={currentAnswers.favoriteMovie}
-                />
-              </Field>
+              <div className="space-y-4">
+                <div className="space-y-4">
+                  <Field label="What&apos;s your favorite movie and why?">
+                    <Textarea
+                      className="min-h-20"
+                      onChange={(event) => updateCurrentAnswer("favoriteMovie", event.target.value)}
+                      value={currentAnswers.favoriteMovie}
+                    />
+                  </Field>
 
-              <Field label="Are you in the mood for something new or a classic?">
-                <ChoiceRow
-                  options={eraOptions}
-                  value={currentAnswers.era}
-                  onChange={(value) => updateCurrentAnswer("era", value)}
-                />
-              </Field>
+                  <Field label="Which famous film person would you love to be stranded on an island with and why?">
+                    <Textarea
+                      className="min-h-20"
+                      onChange={(event) => updateCurrentAnswer("islandPerson", event.target.value)}
+                      value={currentAnswers.islandPerson}
+                    />
+                  </Field>
+                </div>
 
-              <Field label="What are you in the mood for?">
-                <ChoiceRow
-                  options={moodOptions}
-                  value={currentAnswers.mood}
-                  onChange={(value) => updateCurrentAnswer("mood", value)}
-                />
-              </Field>
+                <div className="space-y-4 rounded-md border border-white/10 bg-white/5 p-3">
+                  <Field label="Are you in the mood for something new or a classic?">
+                    <ChoiceRow
+                      options={eraOptions}
+                      value={currentAnswers.era}
+                      onChange={(value) => updateCurrentAnswer("era", value)}
+                    />
+                  </Field>
 
-              <Field label="Which famous film person would you love to be stranded on an island with and why?">
-                <Textarea
-                  className="min-h-16"
-                  onChange={(event) => updateCurrentAnswer("islandPerson", event.target.value)}
-                  value={currentAnswers.islandPerson}
-                />
-              </Field>
+                  <Field label="What are you in the mood for?">
+                    <ChoiceRow
+                      options={moodOptions}
+                      value={currentAnswers.mood}
+                      onChange={(value) => updateCurrentAnswer("mood", value)}
+                    />
+                  </Field>
+                </div>
+              </div>
 
               <Button
-                className="mt-2 w-full"
+                className="mt-2 w-full lg:mx-auto lg:max-w-sm"
                 disabled={!canSubmitPerson}
                 onClick={continueFromPerson}
                 type="button"
@@ -392,7 +401,7 @@ export default function Home() {
           )}
 
           {stage === "loading" && (
-            <section className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+            <section className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-4 text-center">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#47e982]/30 border-t-[#47e982]" />
               <div className="space-y-2">
                 <h1 className="text-xl font-semibold tracking-normal">Finding matches</h1>
@@ -404,96 +413,102 @@ export default function Home() {
           )}
 
           {stage === "results" && currentRecommendation && (
-            <section className="flex flex-1 flex-col justify-center gap-4">
-              <h1 className="text-center text-xl font-semibold tracking-normal">
-                {currentRecommendation.title}
-              </h1>
+            <section className="flex flex-1 flex-col justify-center gap-5">
+              <div className="grid items-center gap-6 lg:grid-cols-[270px_1fr] lg:gap-10">
+                <div className="space-y-4">
+                  <h1 className="text-center text-xl font-semibold tracking-normal lg:text-left lg:text-2xl">
+                    {currentRecommendation.title}
+                  </h1>
 
-              <div className="mx-auto w-full max-w-[235px] overflow-hidden rounded-sm bg-slate-900 shadow-xl shadow-black/40">
-                <Image
-                  alt={`${currentRecommendation.title} poster`}
-                  className="aspect-[2/3] w-full object-cover"
-                  height={375}
-                  priority
-                  src={currentRecommendation.poster}
-                  width={250}
-                />
-              </div>
+                  <div className="mx-auto w-full max-w-[215px] overflow-hidden rounded-md bg-slate-900 shadow-xl shadow-black/40 sm:max-w-[235px] lg:max-w-[270px]">
+                    <Image
+                      alt={currentRecommendation.title + " poster"}
+                      className="aspect-[2/3] w-full object-cover"
+                      height={405}
+                      priority
+                      src={currentRecommendation.poster}
+                      width={270}
+                    />
+                  </div>
+                </div>
 
-              <div className="flex flex-wrap justify-center gap-1.5 text-[0.68rem] font-bold text-[#000b3b]">
-                {currentRecommendation.year && (
-                  <span className="rounded-sm bg-white px-2 py-1">
-                    {currentRecommendation.year}
-                  </span>
-                )}
-                {currentRecommendation.runtimeMinutes && (
-                  <span className="rounded-sm bg-white px-2 py-1">
-                    {currentRecommendation.runtimeMinutes} min
-                  </span>
-                )}
-                {currentRecommendation.ageRating && (
-                  <span className="rounded-sm bg-white px-2 py-1">
-                    {currentRecommendation.ageRating}
-                  </span>
-                )}
-                {typeof currentRecommendation.audienceRating === "number" && (
-                  <span className="rounded-sm bg-white px-2 py-1">
-                    {currentRecommendation.audienceRating.toFixed(1)} rating
-                  </span>
-                )}
-              </div>
+                <div className="flex min-w-0 flex-col gap-4">
+                  <div className="flex flex-wrap justify-center gap-1.5 text-[0.68rem] font-bold text-[#000b3b] lg:justify-start">
+                    {currentRecommendation.year && (
+                      <span className="rounded-sm bg-white px-2 py-1">
+                        {currentRecommendation.year}
+                      </span>
+                    )}
+                    {currentRecommendation.runtimeMinutes && (
+                      <span className="rounded-sm bg-white px-2 py-1">
+                        {currentRecommendation.runtimeMinutes} min
+                      </span>
+                    )}
+                    {currentRecommendation.ageRating && (
+                      <span className="rounded-sm bg-white px-2 py-1">
+                        {currentRecommendation.ageRating}
+                      </span>
+                    )}
+                    {typeof currentRecommendation.audienceRating === "number" && (
+                      <span className="rounded-sm bg-white px-2 py-1">
+                        {currentRecommendation.audienceRating.toFixed(1)} rating
+                      </span>
+                    )}
+                  </div>
 
-              {typeof currentRecommendation.similarity === "number" && (
-                <p className="text-center text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[#47e982]">
-                  Similarity {(currentRecommendation.similarity * 100).toFixed(1)}%
-                </p>
-              )}
+                  {typeof currentRecommendation.similarity === "number" && (
+                    <p className="text-center text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[#47e982] lg:text-left">
+                      Similarity {(currentRecommendation.similarity * 100).toFixed(1)}%
+                    </p>
+                  )}
 
-              <p className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-center text-[0.68rem] leading-4 text-white/65">
-                Recommendations are generated from your group answers, vector database matches,
-                and an AI explanation layer. Results can vary as the movie data grows.
-              </p>
+                  <p className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-center text-[0.68rem] leading-4 text-white/65 lg:text-left">
+                    Recommendations are generated from your group answers, vector database matches,
+                    and an AI explanation layer. Results can vary as the movie data grows.
+                  </p>
 
-              <div className="space-y-2 text-center text-[0.78rem] leading-5 text-white/85">
-                <p>{currentRecommendation.summary}</p>
-                <p className="rounded-sm border border-[#47e982]/25 bg-[#47e982]/10 px-3 py-2 text-left text-white">
-                  <span className="mb-1 block text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[#47e982]">
-                    Why this movie
-                  </span>
-                  {currentRecommendation.reason}
-                </p>
-              </div>
+                  <div className="space-y-2 text-center text-[0.78rem] leading-5 text-white/85 lg:text-left">
+                    <p>{currentRecommendation.summary}</p>
+                    <p className="rounded-sm border border-[#47e982]/25 bg-[#47e982]/10 px-3 py-2 text-left text-white">
+                      <span className="mb-1 block text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[#47e982]">
+                        Why this movie
+                      </span>
+                      {currentRecommendation.reason}
+                    </p>
+                  </div>
 
-              {lastResponse && (
-                <button
-                  className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/60 transition hover:text-[#47e982]"
-                  onClick={() => setShowTrace((visible) => !visible)}
-                  type="button"
-                >
-                  {showTrace ? "Hide AI Trace" : "Show AI Trace"}
-                </button>
-              )}
+                  {lastResponse && (
+                    <button
+                      className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/60 transition hover:text-[#47e982] lg:text-left"
+                      onClick={() => setShowTrace((visible) => !visible)}
+                      type="button"
+                    >
+                      {showTrace ? "Hide AI Trace" : "Show AI Trace"}
+                    </button>
+                  )}
 
-              {showTrace && lastResponse && <AiTrace response={lastResponse} />}
+                  {showTrace && lastResponse && <AiTrace response={lastResponse} />}
 
-              <div className="grid gap-2">
-                {activeRecommendation + 1 < recommendations.length && (
-                  <Button
-                    className="w-full"
-                    onClick={() => setActiveRecommendation((choice) => choice + 1)}
-                    type="button"
-                  >
-                    Next Movie
-                  </Button>
-                )}
-                <Button className="w-full" onClick={editAnswers} type="button" variant="secondary">
-                  Try Another Vibe
-                </Button>
-                {activeRecommendation + 1 >= recommendations.length && (
-                  <Button className="w-full" onClick={resetSurvey} type="button">
-                    Go Again
-                  </Button>
-                )}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {activeRecommendation + 1 < recommendations.length && (
+                      <Button
+                        className="w-full"
+                        onClick={() => setActiveRecommendation((choice) => choice + 1)}
+                        type="button"
+                      >
+                        Next Movie
+                      </Button>
+                    )}
+                    <Button className="w-full" onClick={editAnswers} type="button" variant="secondary">
+                      Try Another Vibe
+                    </Button>
+                    {activeRecommendation + 1 >= recommendations.length && (
+                      <Button className="w-full" onClick={resetSurvey} type="button">
+                        Go Again
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
           )}
@@ -543,10 +558,10 @@ function AiTrace({ response }: { response: RecommendationResponse }) {
 
 function Header() {
   return (
-    <header className="mb-6 pt-5 text-center">
+    <header className="mb-5 pt-2 text-center lg:mb-6 lg:pt-0">
       <Image
         alt="PopChoice logo"
-        className="mx-auto mb-1 h-14 w-14 object-contain"
+        className="mx-auto mb-1 h-12 w-12 object-contain sm:h-14 sm:w-14"
         height={68}
         priority
         src="/popchoice-logo.png"
