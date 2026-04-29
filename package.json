@@ -1,17 +1,32 @@
 {
-  "name": "popchoice-scaffold",
+  "name": "popchoice",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "parse:movies": "tsx scripts/parse-movies.ts",
+    "embed:movies": "tsx scripts/embed-and-insert-movies.ts",
+    "check:movies": "tsx scripts/check-movies-table.ts",
+    "query:movies": "tsx scripts/query-movies.ts",
+    "check:poster": "tsx scripts/check-poster.ts",
+    "import:tmdb": "tsx scripts/import-tmdb-popular.ts",
+    "check:env": "tsx scripts/check-env.ts"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
+    "@supabase/supabase-js": "^2.105.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
+    "lucide-react": "^1.11.0",
     "next": "16.2.4",
+    "openai": "^6.35.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -21,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }
